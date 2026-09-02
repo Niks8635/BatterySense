@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
@@ -9,52 +9,49 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import BatteryReportPage from './pages/BatteryReportPage';
 import SettingsPage from './pages/SettingsPage';
 import AboutPage from './pages/AboutPage';
-import { fetchHealth } from './services/api';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { useAgentStatus } from './hooks/useAgentStatus';
+import { AgentConnectModal } from './components/AgentConnectModal';
+import { Sparkles, Laptop, X } from 'lucide-react';
 
 function App() {
-  const [offline, setOffline] = useState(false);
-  const [retrying, setRetrying] = useState(false);
-  const [failCount, setFailCount] = useState(0);
-
-  const checkConnection = async () => {
-    try {
-      await fetchHealth();
-      setOffline(false);
-      setFailCount(0);
-    } catch (err) {
-      setFailCount(prev => {
-        const next = prev + 1;
-        // Require 3 consecutive failed checks before showing blocking overlay
-        if (next >= 3) {
-          setOffline(true);
-        }
-        return next;
-      });
-    }
-  };
-
-  useEffect(() => {
-    checkConnection();
-    const interval = setInterval(checkConnection, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleManualRetry = async () => {
-    setRetrying(true);
-    try {
-      await fetchHealth();
-      setOffline(false);
-      setFailCount(0);
-    } catch {
-      // still offline
-    } finally {
-      setRetrying(false);
-    }
-  };
+  const { isOnline } = useAgentStatus();
+  const [showBanner, setShowBanner] = useState(true);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
 
   return (
     <>
+      {/* Non-blocking informational banner for external visitors or offline agent */}
+      {!isOnline && showBanner && (
+        <div className="bg-gradient-to-r from-accent-blue/15 via-purple-500/15 to-accent-blue/15 border-b border-accent-blue/25 text-text-primary px-4 py-2.5 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+            </span>
+            <span>
+              <strong className="text-white">Interactive Demo Mode</strong> — Showing simulated hardware telemetry. Run the local Windows agent on your PC to stream live metrics.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setConnectModalOpen(true)}
+              className="bg-accent-blue hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Laptop className="w-3.5 h-3.5" />
+              <span>Connect Your PC</span>
+            </button>
+            <button
+              onClick={() => setShowBanner(false)}
+              className="text-text-secondary hover:text-white p-1 transition-colors"
+              title="Dismiss banner"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<DashboardPage />} />
@@ -67,37 +64,11 @@ function App() {
           <Route path="about" element={<AboutPage />} />
         </Route>
       </Routes>
-      
-      {offline && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="glass-card max-w-md w-full p-8 text-center border-red-500/30 shadow-2xl">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400 mb-4">
-              <AlertCircle className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Monitoring Agent Offline</h2>
-            <p className="text-text-secondary text-sm mb-6 leading-relaxed">
-              Cannot connect to the local Windows monitoring agent on <code className="text-accent-blue font-mono">127.0.0.1:8000</code>.
-              Ensure the Python backend process is running.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button 
-                onClick={handleManualRetry}
-                disabled={retrying}
-                className="bg-accent-blue text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${retrying ? 'animate-spin' : ''}`} />
-                {retrying ? 'Connecting...' : 'Reconnect Now'}
-              </button>
-              <button 
-                onClick={() => setOffline(false)} 
-                className="px-4 py-2.5 rounded-xl text-xs font-medium text-text-secondary hover:text-white hover:bg-white/5 transition-colors border border-white/10"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
+      <AgentConnectModal
+        isOpen={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+      />
     </>
   );
 }

@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { fetchAnalytics, clearAnalytics } from '../services/api';
 import { AnalyticsData, TelemetryRecord } from '../types';
+import { getDemoAnalytics } from '../utils/demoData';
 import {
   LineChart as ChartIcon,
   RefreshCw,
@@ -41,10 +42,14 @@ export default function AnalyticsPage() {
     if (isManual) setRefreshing(true);
     try {
       const result = await fetchAnalytics(period);
-      setData(result);
+      if (result && result.records && result.records.length > 0) {
+        setData(result);
+      } else {
+        setData(getDemoAnalytics(period));
+      }
       setLastUpdated(new Date());
     } catch (err) {
-      console.error('Failed to load analytics:', err);
+      setData(getDemoAnalytics(period));
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);

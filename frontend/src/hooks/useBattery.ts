@@ -3,15 +3,24 @@ import { BatteryData } from '../types';
 import { fetchBattery } from '../services/api';
 import { wsService } from '../services/websocketService';
 import { useSettings } from './useSettings';
+import { useAgentStatus } from './useAgentStatus';
+import { DEMO_BATTERY } from '../utils/demoData';
 
 export const useBattery = () => {
   const { settings } = useSettings();
-  const [data, setData] = useState<BatteryData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { isOnline } = useAgentStatus();
+  const [data, setData] = useState<BatteryData | null>(DEMO_BATTERY);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+
+    if (!isOnline) {
+      setData(DEMO_BATTERY);
+      setLoading(false);
+      return;
+    }
 
     const loadData = async () => {
       try {
@@ -21,7 +30,10 @@ export const useBattery = () => {
           setError(null);
         }
       } catch (err) {
-        if (mounted) setError('Failed to load battery data');
+        if (mounted) {
+          setError('Failed to load battery data');
+          setData(DEMO_BATTERY);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -31,9 +43,8 @@ export const useBattery = () => {
     const rate = Math.max(1000, settings.refreshRate || 5000);
     const interval = setInterval(loadData, rate);
 
-    // WebSocket sends full BatteryResponse model_dump
     const unsubscribe = wsService.onMessage('battery', (wsData: BatteryData) => {
-      if (mounted) {
+      if (mounted && isOnline) {
         setData(wsData);
       }
     });
@@ -43,7 +54,7 @@ export const useBattery = () => {
       clearInterval(interval);
       unsubscribe();
     };
-  }, [settings.refreshRate]);
+  }, [settings.refreshRate, isOnline]);
 
   return { data, loading, error };
 };
