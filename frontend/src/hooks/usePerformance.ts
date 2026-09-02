@@ -3,12 +3,14 @@ import { PerformanceData, CpuData, MemoryData } from '../types';
 import { fetchPerformance } from '../services/api';
 import { wsService } from '../services/websocketService';
 import { useSettings } from './useSettings';
+import { samplePerformance } from '../data/sampleData';
 
 export const usePerformance = () => {
   const { settings } = useSettings();
   const [data, setData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPreview, setIsPreview] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -19,9 +21,16 @@ export const usePerformance = () => {
         if (mounted) {
           setData(result);
           setError(null);
+          setIsPreview(false);
         }
       } catch (err) {
-        if (mounted) setError('Failed to load performance data');
+        if (mounted) {
+          setError('Failed to load performance data');
+          if (!data || isPreview) {
+            setData(samplePerformance);
+            setIsPreview(true);
+          }
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -35,12 +44,14 @@ export const usePerformance = () => {
     const unsubscribeCpu = wsService.onMessage('cpu', (wsData: CpuData) => {
       if (mounted) {
         setData(prev => prev ? { ...prev, cpu: wsData } : null);
+        setIsPreview(false);
       }
     });
 
     const unsubscribeMem = wsService.onMessage('memory', (wsData: MemoryData) => {
       if (mounted) {
         setData(prev => prev ? { ...prev, memory: wsData } : null);
+        setIsPreview(false);
       }
     });
 
@@ -52,5 +63,5 @@ export const usePerformance = () => {
     };
   }, [settings.refreshRate]);
 
-  return { data, loading, error };
+  return { data, loading, error, isPreview };
 };

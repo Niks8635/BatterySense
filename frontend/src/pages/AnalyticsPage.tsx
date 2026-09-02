@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { fetchAnalytics, clearAnalytics } from '../services/api';
 import { AnalyticsData, TelemetryRecord } from '../types';
+import { sampleAnalytics } from '../data/sampleData';
 import {
   LineChart as ChartIcon,
   RefreshCw,
@@ -48,6 +49,7 @@ export default function AnalyticsPage() {
       setLastUpdated(new Date());
     } catch (err: any) {
       setError(err?.message || 'Agent not reachable');
+      setData(sampleAnalytics);
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);

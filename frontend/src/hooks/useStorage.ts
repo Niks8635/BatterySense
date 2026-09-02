@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { StorageData } from '../types';
 import { fetchStorage } from '../services/api';
+import { sampleStorage } from '../data/sampleData';
 
 export const useStorage = () => {
   const [data, setData] = useState<StorageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPreview, setIsPreview] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -15,9 +17,16 @@ export const useStorage = () => {
         if (mounted) {
           setData(result);
           setError(null);
+          setIsPreview(false);
         }
       } catch (err) {
-        if (mounted) setError('Failed to load storage data');
+        if (mounted) {
+          setError('Failed to load storage data');
+          if (!data || isPreview) {
+            setData(sampleStorage);
+            setIsPreview(true);
+          }
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -32,5 +41,5 @@ export const useStorage = () => {
     };
   }, []);
 
-  return { data, loading, error };
+  return { data, loading, error, isPreview };
 };

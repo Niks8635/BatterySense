@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { wsService } from '../services/websocketService';
-import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 export const ConnectionIndicator: React.FC = () => {
   const [status, setStatus] = useState<string>('disconnected');
@@ -30,10 +30,11 @@ export const ConnectionIndicator: React.FC = () => {
         badge: 'bg-accent-amber/10 text-accent-amber border-accent-amber/20'
       };
     }
+    // Disconnected → show "Preview Data" badge instead of alarming "Agent Offline"
     return {
-      dot: 'bg-accent-red',
-      text: 'Agent Offline',
-      badge: 'bg-accent-red/10 text-accent-red border-accent-red/20'
+      dot: 'bg-blue-400',
+      text: 'Preview Data',
+      badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
     };
   };
 
@@ -43,10 +44,14 @@ export const ConnectionIndicator: React.FC = () => {
     <button
       onClick={handleReconnect}
       className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${current.badge}`}
-      title="Click to reconnect WebSocket telemetry"
+      title={status === 'connected' ? 'Receiving live telemetry from your Windows agent' : 'Showing preview data — click to retry agent connection'}
       aria-label="Connection status"
     >
-      <span className={`w-2 h-2 rounded-full ${current.dot}`} />
+      {status !== 'connected' ? (
+        <Eye className="w-3 h-3" />
+      ) : (
+        <span className={`w-2 h-2 rounded-full ${current.dot}`} />
+      )}
       <span>{current.text}</span>
     </button>
   );

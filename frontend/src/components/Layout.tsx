@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { Menu, Activity, X, Settings } from 'lucide-react';
+import { Menu, Eye, X } from 'lucide-react';
 import { wsService } from '../services/websocketService';
 import { fetchHealth } from '../services/api';
 
@@ -48,18 +48,18 @@ export default function Layout() {
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Non-Intrusive Agent Status Notification Banner */}
+        {/* Top Non-Intrusive Preview Data Banner */}
         {isAgentOffline && !bannerDismissed && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs flex items-center justify-between gap-3 text-amber-200 z-20 shrink-0">
+          <div className="bg-blue-500/10 border-b border-blue-500/20 px-4 py-2 text-xs flex items-center justify-between gap-3 text-blue-200 z-20 shrink-0">
             <div className="flex items-center gap-2 overflow-hidden">
-              <Activity className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+              <Eye className="w-4 h-4 text-blue-400 shrink-0" />
               <span className="truncate">
-                <strong className="text-white">Windows Agent Disconnected:</strong> Running in dashboard viewer mode. Start <code className="bg-black/40 px-1 py-0.5 rounded text-amber-300 font-mono">start_backend.bat</code> on your PC or configure your agent URL in <Link to="/settings" className="underline font-semibold hover:text-white">Settings</Link> to stream live hardware telemetry.
+                <strong className="text-white">Preview Mode:</strong> You're viewing sample hardware data. To monitor your own PC, run <code className="bg-black/40 px-1 py-0.5 rounded text-blue-300 font-mono">start_backend.bat</code> on your Windows machine and configure the agent URL in <Link to="/settings" className="underline font-semibold hover:text-white">Settings</Link>.
               </span>
             </div>
             <button
               onClick={handleDismissBanner}
-              className="text-amber-400/70 hover:text-white p-1 rounded transition-colors shrink-0"
+              className="text-blue-400/70 hover:text-white p-1 rounded transition-colors shrink-0"
               title="Dismiss banner"
               aria-label="Dismiss banner"
             >

@@ -3,12 +3,14 @@ import { BatteryData } from '../types';
 import { fetchBattery } from '../services/api';
 import { wsService } from '../services/websocketService';
 import { useSettings } from './useSettings';
+import { sampleBattery } from '../data/sampleData';
 
 export const useBattery = () => {
   const { settings } = useSettings();
   const [data, setData] = useState<BatteryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPreview, setIsPreview] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -19,9 +21,17 @@ export const useBattery = () => {
         if (mounted) {
           setData(result);
           setError(null);
+          setIsPreview(false);
         }
       } catch (err) {
-        if (mounted) setError('Failed to load battery data');
+        if (mounted) {
+          setError('Failed to load battery data');
+          // Fall back to sample preview data so visitors see a populated dashboard
+          if (!data || isPreview) {
+            setData(sampleBattery);
+            setIsPreview(true);
+          }
+        }
       } finally {
         if (mounted) setLoading(false);
       }
@@ -35,6 +45,7 @@ export const useBattery = () => {
     const unsubscribe = wsService.onMessage('battery', (wsData: BatteryData) => {
       if (mounted) {
         setData(wsData);
+        setIsPreview(false);
       }
     });
 
@@ -45,5 +56,5 @@ export const useBattery = () => {
     };
   }, [settings.refreshRate]);
 
-  return { data, loading, error };
+  return { data, loading, error, isPreview };
 };
