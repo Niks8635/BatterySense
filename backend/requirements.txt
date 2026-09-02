@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+psutil
+wmi
+pydantic
+pydantic-settings
+aiosqlite
+python-dateutil
