@@ -176,31 +176,37 @@ export default function PerformancePage() {
           <span className="text-xs text-text-secondary">{storage?.drives.length || 0} Active Partitions</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          {storage?.drives.map((drive, idx) => (
-            <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-white text-sm">{drive.device} ({drive.mountpoint})</span>
-                  <span className="text-xs text-text-secondary ml-2 font-mono uppercase">[{drive.fstype}]</span>
+        {(!storage?.drives || storage.drives.length === 0) ? (
+          <div className="p-8 text-center text-text-secondary text-xs rounded-xl bg-white/[0.02] border border-white/5">
+            No active storage partitions detected. Start the Windows hardware agent to inspect disk usage.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            {storage.drives.map((drive, idx) => (
+              <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-white text-sm">{drive.device} ({drive.mountpoint})</span>
+                    <span className="text-xs text-text-secondary ml-2 font-mono uppercase">[{drive.fstype}]</span>
+                  </div>
+                  <span className="text-sm font-bold text-white font-mono">{drive.percent}%</span>
                 </div>
-                <span className="text-sm font-bold text-white font-mono">{drive.percent}%</span>
+                <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className={`h-2.5 rounded-full transition-all duration-500 ${
+                      drive.percent > 90 ? 'bg-accent-red' : drive.percent > 70 ? 'bg-accent-amber' : 'bg-accent-green'
+                    }`}
+                    style={{ width: `${drive.percent}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-text-secondary font-mono">
+                  <span>{formatBytes(drive.used)} in use</span>
+                  <span>{formatBytes(drive.free)} free of {formatBytes(drive.total)}</span>
+                </div>
               </div>
-              <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
-                <div
-                  className={`h-2.5 rounded-full transition-all duration-500 ${
-                    drive.percent > 90 ? 'bg-accent-red' : drive.percent > 70 ? 'bg-accent-amber' : 'bg-accent-green'
-                  }`}
-                  style={{ width: `${drive.percent}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-text-secondary font-mono">
-                <span>{formatBytes(drive.used)} in use</span>
-                <span>{formatBytes(drive.free)} free of {formatBytes(drive.total)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

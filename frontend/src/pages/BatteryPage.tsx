@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useBattery } from '../hooks/useBattery';
 import { MetricCard } from '../components/MetricCard';
 import { BatteryGauge } from '../components/BatteryGauge';
@@ -20,7 +21,8 @@ import {
   Activity,
   ShieldCheck,
   RefreshCw,
-  Repeat
+  Repeat,
+  Server
 } from 'lucide-react';
 
 export default function BatteryPage() {
@@ -57,9 +59,11 @@ export default function BatteryPage() {
             {isBatteryAvailable && batteryPct !== null ? `${batteryPct}% Charged` : 'Battery Telemetry'}
           </h2>
           <p className="text-sm text-text-secondary max-w-md">
-            {isCharging
-              ? 'External AC adapter is connected and actively supplying power to system components.'
-              : 'Discharging on internal battery power. Optimized power plans help extend remaining battery runtime.'}
+            {isBatteryAvailable
+              ? isCharging
+                ? 'External AC adapter is connected and actively supplying power to system components.'
+                : 'Discharging on internal battery power. Optimized power plans help extend remaining battery runtime.'
+              : 'Connect your local Windows monitoring agent to inspect live battery degradation, cycle count, and charging states.'}
           </p>
           {data?.estimated_runtime_seconds.available && data.estimated_runtime_seconds.value && (
             <div className="pt-2 flex items-center justify-center md:justify-start gap-2 text-sm font-semibold text-accent-amber">
@@ -89,7 +93,7 @@ export default function BatteryPage() {
           status={data?.percentage.available ? 'available' : 'unavailable'}
           icon={Battery}
           color="text-accent-blue"
-          subtitle={data?.is_charging.value ? 'AC Charging' : 'Discharging'}
+          subtitle={data?.percentage.available ? (data?.is_charging.value ? 'AC Charging' : 'Discharging') : undefined}
         />
 
         <MetricCard
@@ -107,7 +111,7 @@ export default function BatteryPage() {
           status={data?.wear_percent.available ? 'available' : 'unavailable'}
           icon={Activity}
           color="text-accent-red"
-          subtitle="Total capacity degradation"
+          subtitle={data?.wear_percent.available ? 'Total capacity degradation' : undefined}
         />
 
         <MetricCard
@@ -115,7 +119,7 @@ export default function BatteryPage() {
           value={data?.design_capacity.available && data.design_capacity.value ? formatCapacity(data.design_capacity.value) : ''}
           status={data?.design_capacity.available ? 'available' : 'unavailable'}
           icon={Zap}
-          subtitle="Original specification"
+          subtitle={data?.design_capacity.available ? 'Original specification' : undefined}
         />
 
         <MetricCard
@@ -124,7 +128,7 @@ export default function BatteryPage() {
           status={data?.full_charge_capacity.available ? 'available' : 'unavailable'}
           icon={Zap}
           color="text-accent-green"
-          subtitle="Current maximum charge retention"
+          subtitle={data?.full_charge_capacity.available ? 'Current maximum retention' : undefined}
         />
 
         <MetricCard
@@ -133,7 +137,7 @@ export default function BatteryPage() {
           status={data?.cycle_count.available ? 'available' : 'unavailable'}
           icon={Repeat}
           color="text-purple-400"
-          subtitle="Cumulative discharge cycles"
+          subtitle={data?.cycle_count.available ? 'Cumulative discharge cycles' : undefined}
         />
 
         <MetricCard
@@ -149,7 +153,7 @@ export default function BatteryPage() {
           value={data?.charge_rate.available && data.charge_rate.value ? `${data.charge_rate.value} mW` : ''}
           status={data?.charge_rate.available ? 'available' : 'unavailable'}
           icon={Zap}
-          subtitle="Real-time power flux"
+          subtitle={data?.charge_rate.available ? 'Real-time power flux' : undefined}
         />
 
         <MetricCard
@@ -157,7 +161,7 @@ export default function BatteryPage() {
           value={data?.temperature.available && data.temperature.value ? formatTemperature(data.temperature.value) : ''}
           status={data?.temperature.available ? 'available' : 'unavailable'}
           icon={Thermometer}
-          subtitle="ACPI thermal sensor"
+          subtitle={data?.temperature.available ? 'ACPI thermal sensor' : undefined}
         />
       </div>
     </div>

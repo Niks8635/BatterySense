@@ -1,17 +1,27 @@
 import { BatteryData, PerformanceData, SystemData, StorageData, AnalyticsData } from '../types';
 
-// Base API URL configuration from environment (defaults to local Windows agent on 127.0.0.1:8000)
-export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
-
-const getEndpointUrl = (path: string): string => {
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  if (API_BASE_URL.endsWith('/api') && cleanPath.startsWith('/api')) {
-    return `${API_BASE_URL}${cleanPath.substring(4)}`;
+// Base API URL configuration from localStorage or environment (defaults to local Windows agent on 127.0.0.1:8000)
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('batterysense_agent_url');
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/+$/, '');
+    }
   }
-  return cleanPath.startsWith('/api') ? `${API_BASE_URL}${cleanPath}` : `${API_BASE_URL}/api${cleanPath}`;
+  const envUrl = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').trim();
+  return envUrl.replace(/\/+$/, '');
 };
 
-async function fetchWithTimeout(path: string, options: RequestInit = {}, timeout = 8000): Promise<Response> {
+const getEndpointUrl = (path: string): string => {
+  const base = getApiBaseUrl();
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (base.endsWith('/api') && cleanPath.startsWith('/api')) {
+    return `${base}${cleanPath.substring(4)}`;
+  }
+  return cleanPath.startsWith('/api') ? `${base}${cleanPath}` : `${base}/api${cleanPath}`;
+};
+
+async function fetchWithTimeout(path: string, options: RequestInit = {}, timeout = 5000): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   const fullUrl = getEndpointUrl(path);

@@ -2,6 +2,7 @@ import React from 'react';
 import { useSystemInfo } from '../hooks/useSystemInfo';
 import { useStorage } from '../hooks/useStorage';
 import { Server, Cpu, Monitor, HardDrive, Copy, Check } from 'lucide-react';
+import { ConnectionIndicator } from '../components/ConnectionIndicator';
 import { formatBytes, formatFrequency } from '../utils/format';
 import { useState } from 'react';
 
@@ -55,9 +56,16 @@ export default function SystemPage() {
 
   return (
     <div className="space-y-6 lg:space-y-8 pb-10">
-      <header>
-        <h1 className="text-3xl font-bold">System Information</h1>
-        <p className="text-text-secondary mt-1">Hardware and OS specifications</p>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">System Information</h1>
+            <ConnectionIndicator />
+          </div>
+          <p className="text-text-secondary mt-1">
+            {data ? 'Hardware and OS specifications' : 'Connect the Windows monitoring agent to inspect CPU, motherboard, BIOS, and OS details.'}
+          </p>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

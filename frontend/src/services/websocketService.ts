@@ -1,10 +1,16 @@
+import { getApiBaseUrl } from './api';
+
 type MessageHandler = (data: any) => void;
 
 const getWebSocketUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const customWs = localStorage.getItem('batterysense_ws_url');
+    if (customWs && customWs.trim()) return customWs.trim();
+  }
   if (import.meta.env.VITE_WS_URL) {
     return import.meta.env.VITE_WS_URL;
   }
-  const apiBase = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+  const apiBase = getApiBaseUrl();
   const wsProtocol = apiBase.startsWith('https') ? 'wss:' : 'ws:';
   const cleanHost = apiBase.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
   return `${wsProtocol}//${cleanHost}/ws/telemetry`;
@@ -13,23 +19,19 @@ const getWebSocketUrl = (): string => {
 class WebSocketService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 10;
-  private url: string;
+  private maxReconnectAttempts = 5;
   private handlers: Map<string, MessageHandler[]> = new Map();
   private connectionState: 'connected' | 'disconnected' | 'reconnecting' = 'disconnected';
   private connectionChangeHandlers: ((state: string) => void)[] = [];
   private reconnectTimer: any = null;
-
-  constructor() {
-    this.url = getWebSocketUrl();
-  }
 
   public connect() {
     if (this.connectionState === 'connected' || this.ws?.readyState === WebSocket.CONNECTING) return;
     
     this.setConnectionState('reconnecting');
     try {
-      this.ws = new WebSocket(this.url);
+      const url = getWebSocketUrl();
+      this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
@@ -64,7 +66,7 @@ class WebSocketService {
   private handleReconnect() {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      const timeout = Math.min(1000 * Math.pow(1.5, this.reconnectAttempts), 15000);
+      const timeout = Math.min(2000 * Math.pow(1.5, this.reconnectAttempts), 15000);
       this.reconnectAttempts++;
       this.reconnectTimer = setTimeout(() => this.connect(), timeout);
     }
@@ -97,6 +99,10 @@ class WebSocketService {
     return () => {
       this.connectionChangeHandlers = this.connectionChangeHandlers.filter(h => h !== handler);
     };
+  }
+
+  public getConnectionState() {
+    return this.connectionState;
   }
 
   private setConnectionState(state: 'connected' | 'disconnected' | 'reconnecting') {

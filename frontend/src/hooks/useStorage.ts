@@ -1,24 +1,14 @@
 import { useState, useEffect } from 'react';
 import { StorageData } from '../types';
 import { fetchStorage } from '../services/api';
-import { useAgentStatus } from './useAgentStatus';
-import { DEMO_STORAGE } from '../utils/demoData';
 
 export const useStorage = () => {
-  const { isOnline } = useAgentStatus();
-  const [data, setData] = useState<StorageData | null>(DEMO_STORAGE);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<StorageData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
-
-    if (!isOnline) {
-      setData(DEMO_STORAGE);
-      setLoading(false);
-      return;
-    }
-
     const loadData = async () => {
       try {
         const result = await fetchStorage();
@@ -27,10 +17,7 @@ export const useStorage = () => {
           setError(null);
         }
       } catch (err) {
-        if (mounted) {
-          setError('Failed to load storage data');
-          setData(DEMO_STORAGE);
-        }
+        if (mounted) setError('Failed to load storage data');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -43,7 +30,7 @@ export const useStorage = () => {
       mounted = false;
       clearInterval(interval);
     };
-  }, [isOnline]);
+  }, []);
 
   return { data, loading, error };
 };

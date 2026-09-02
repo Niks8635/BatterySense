@@ -13,7 +13,6 @@ import {
 } from 'recharts';
 import { fetchAnalytics, clearAnalytics } from '../services/api';
 import { AnalyticsData, TelemetryRecord } from '../types';
-import { getDemoAnalytics } from '../utils/demoData';
 import {
   LineChart as ChartIcon,
   RefreshCw,
@@ -38,18 +37,17 @@ export default function AnalyticsPage() {
   const [clearing, setClearing] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
+  const [error, setError] = useState<string | null>(null);
+
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
+      setError(null);
       const result = await fetchAnalytics(period);
-      if (result && result.records && result.records.length > 0) {
-        setData(result);
-      } else {
-        setData(getDemoAnalytics(period));
-      }
+      setData(result);
       setLastUpdated(new Date());
-    } catch (err) {
-      setData(getDemoAnalytics(period));
+    } catch (err: any) {
+      setError(err?.message || 'Agent not reachable');
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);
@@ -199,7 +197,7 @@ export default function AnalyticsPage() {
             <Battery className="w-5 h-5 text-accent-green" />
           </div>
           <div className="text-2xl font-bold text-white flex items-baseline gap-2">
-            {chartData.length > 0 ? `${stats.latestBattery}%` : 'Collecting...'}
+            {chartData.length > 0 ? `${stats.latestBattery}%` : (error ? 'Unavailable' : 'Waiting...')}
             {stats.pluggedNow && (
               <span className="text-xs font-normal text-accent-green flex items-center gap-1">
                 <Zap className="w-3 h-3" /> AC
@@ -227,10 +225,10 @@ export default function AnalyticsPage() {
             <Cpu className="w-5 h-5 text-accent-blue" />
           </div>
           <div className="text-2xl font-bold text-white">
-            {chartData.length > 0 ? `${stats.avgCpu}%` : 'Collecting...'}
+            {chartData.length > 0 ? `${stats.avgCpu}%` : (error ? 'Unavailable' : 'Waiting...')}
           </div>
           <div className="text-xs text-text-secondary mt-1">
-            Peak: <span className="text-white font-medium">{stats.maxCpu}%</span>
+            Peak: <span className="text-white font-medium">{stats.maxCpu ? `${stats.maxCpu}%` : 'N/A'}</span>
           </div>
         </div>
 
@@ -240,7 +238,7 @@ export default function AnalyticsPage() {
             <MemoryStick className="w-5 h-5 text-accent-amber" />
           </div>
           <div className="text-2xl font-bold text-white">
-            {chartData.length > 0 ? `${stats.avgRam}%` : 'Collecting...'}
+            {chartData.length > 0 ? `${stats.avgRam}%` : (error ? 'Unavailable' : 'Waiting...')}
           </div>
           <div className="text-xs text-text-secondary mt-1">System memory utilization</div>
         </div>
@@ -302,11 +300,15 @@ export default function AnalyticsPage() {
         ) : chartData.length === 0 ? (
           <div className="h-96 flex flex-col items-center justify-center text-center p-6 text-text-secondary space-y-3">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-accent-blue">
-              <Clock className="w-8 h-8 animate-pulse" />
+              <Clock className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-semibold text-white">Collecting Real-time Telemetry</h3>
+            <h3 className="text-lg font-semibold text-white">
+              {error ? 'Hardware Agent Disconnected' : 'Waiting for Telemetry Records'}
+            </h3>
             <p className="max-w-md text-sm">
-              The monitoring agent records hardware samples continuously every 5 seconds. Metrics will populate here automatically as data is recorded.
+              {error
+                ? 'Start the local Windows monitoring agent on your PC (start_backend.bat) to record and chart live telemetry.'
+                : 'The monitoring agent records hardware samples continuously every 5 seconds. Metrics will populate here automatically as data is recorded.'}
             </p>
           </div>
         ) : (

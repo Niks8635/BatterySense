@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useBattery } from '../hooks/useBattery';
 import { usePerformance } from '../hooks/usePerformance';
 import { useSystemInfo } from '../hooks/useSystemInfo';
@@ -6,7 +7,7 @@ import { MetricCard } from '../components/MetricCard';
 import { BatteryGauge } from '../components/BatteryGauge';
 import { ConnectionIndicator } from '../components/ConnectionIndicator';
 import { formatPercentage, getHealthLabel, getHealthColor, formatDuration, formatCapacity } from '../utils/format';
-import { Battery, Zap, Cpu, MemoryStick, Clock, ShieldCheck, Laptop } from 'lucide-react';
+import { Battery, Zap, Cpu, MemoryStick, Clock, ShieldCheck, Laptop, Server } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function DashboardPage() {
@@ -67,20 +68,26 @@ export default function DashboardPage() {
                     <span className="text-sm font-semibold uppercase tracking-wider text-text-secondary">
                       Battery Health
                     </span>
-                    {healthStatus && (
+                    {healthStatus ? (
                       <span className={`text-xs font-bold uppercase tracking-wider ${getHealthColor(healthStatus)}`}>
                         {getHealthLabel(healthStatus)} Condition
+                      </span>
+                    ) : (
+                      <span className="text-xs font-medium text-text-secondary uppercase">
+                        Waiting for Agent
                       </span>
                     )}
                   </div>
                 </div>
 
                 <p className="text-text-secondary text-sm mt-3 max-w-md">
-                  {isCharging
-                    ? 'Connected to AC power adapter. Supplying charge to internal cells.'
-                    : runtimeSecs
-                    ? `Running on internal cells. Estimated ${formatDuration(runtimeSecs)} remaining.`
-                    : 'Running on internal battery power.'}
+                  {isBatteryAvailable
+                    ? isCharging
+                      ? 'Connected to AC power adapter. Supplying charge to internal cells.'
+                      : runtimeSecs
+                      ? `Running on internal cells. Estimated ${formatDuration(runtimeSecs)} remaining.`
+                      : 'Running on internal battery power.'
+                    : 'Windows monitoring agent is not connected. Start the local agent on your PC to view live battery and hardware telemetry.'}
                 </p>
 
                 {/* Capacity Ratio Quick Stat */}
@@ -134,7 +141,7 @@ export default function DashboardPage() {
           status={batteryData?.percentage.available ? 'available' : 'unavailable'}
           icon={Battery}
           color="text-accent-green"
-          subtitle={batteryData?.is_charging.value ? 'Charging via AC' : 'Discharging'}
+          subtitle={batteryData?.percentage.available ? (batteryData?.is_charging.value ? 'Charging via AC' : 'Discharging') : undefined}
         />
 
         <MetricCard
@@ -152,7 +159,7 @@ export default function DashboardPage() {
           status={perfData?.memory.percent.available ? 'available' : 'unavailable'}
           icon={MemoryStick}
           color="text-accent-amber"
-          subtitle="System RAM"
+          subtitle={perfData?.memory.percent.available ? 'System RAM' : undefined}
         />
 
         <MetricCard
@@ -161,9 +168,30 @@ export default function DashboardPage() {
           status={batteryData?.estimated_runtime_seconds.available && batteryData.estimated_runtime_seconds.value ? 'available' : 'unavailable'}
           icon={Clock}
           color="text-purple-400"
-          subtitle={batteryData?.power_plugged.value ? 'On AC Power' : 'Discharging'}
+          subtitle={batteryData?.estimated_runtime_seconds.available ? (batteryData?.power_plugged.value ? 'On AC Power' : 'Discharging') : undefined}
         />
       </div>
+
+      {/* Hardware Connection Quick Guide (When Disconnected) */}
+      {!isBatteryAvailable && (
+        <div className="glass-card p-6 border-l-4 border-l-accent-blue flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="font-bold text-white text-base flex items-center gap-2">
+              <Server className="w-4 h-4 text-accent-blue" />
+              Connect Your Windows PC Hardware
+            </h3>
+            <p className="text-xs text-text-secondary leading-relaxed max-w-2xl">
+              To stream authentic low-level hardware metrics (battery wear, cycle count, core frequencies, RAM allocation), start the local agent on your Windows computer by running <code className="text-accent-blue font-mono">start_backend.bat</code> or <code className="text-accent-blue font-mono">python run.py</code>.
+            </p>
+          </div>
+          <Link
+            to="/settings"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-accent-blue hover:bg-blue-600 text-white transition-colors shrink-0"
+          >
+            Configure Agent
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
